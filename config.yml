@@ -1,0 +1,10 @@
+production: False
+database:
+  driver: mysql
+  host: 127.0.0.1
+  port: 3310
+  username: root
+  password: hapticus
+  database: dc_note
+  max_database_connections:  10
+  max_idle_connections: 10
