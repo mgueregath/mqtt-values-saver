@@ -1,8 +1,8 @@
 production: False
 database:
   driver: mysql
-  host: 127.0.0.1
-  port: 3310
+  host: 192.168.1.113
+  port: 3312
   username: root
   password: hapticus
   database: dc_note

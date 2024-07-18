@@ -49,7 +49,6 @@ func (poolConnection *PoolConnection) Query(queryString string, dest interface{}
 }
 
 func (poolConnection *PoolConnection) Save(queryString string, values []interface{}) error {
-	println(fmt.Sprintf(queryString, values...))
 	insert, err := poolConnection.connection.Query(fmt.Sprintf(queryString, values...))
 	if err != nil {
 		return err

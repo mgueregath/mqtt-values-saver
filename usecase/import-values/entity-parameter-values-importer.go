@@ -68,7 +68,13 @@ func (importer *EntityParameterValuesImporter) Start() {
 
 		mqtt.Connect(topics, func(topic string, message []byte) {
 			for _, instance := range topicsMap[topic] {
-				importer.saveValue.Save(instance, gjson.Get(string(message), *instance.LiveVariable).String(), gjson.Get(string(message), *instance.LiveTimestampVariable).String())
+				if instance.LiveVariable != nil && *instance.LiveVariable != "" {
+					var timestamp string = ""
+					if instance.LiveTimestampVariable != nil && *instance.LiveTimestampVariable != "" {
+						timestamp = gjson.Get(string(message), *instance.LiveTimestampVariable).String()
+					}
+					importer.saveValue.Save(instance, gjson.Get(string(message), *instance.LiveVariable).String(), timestamp)
+				}
 			}
 		})
 

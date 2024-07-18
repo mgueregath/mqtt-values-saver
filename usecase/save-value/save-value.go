@@ -21,7 +21,6 @@ func NewSaveValue(
 }
 
 func (s *SaveValue) Save(entityParameterInstance entity.EntityParameterInstance, value string, timestamp string) error {
-	println(*entityParameterInstance.LiveTimestampVariable, value, timestamp)
 	valueNumber, _ := strconv.ParseFloat(value, 64)
 	var timestampDate time.Time = time.Now()
 	if timestamp != "" && &timestamp != nil {
