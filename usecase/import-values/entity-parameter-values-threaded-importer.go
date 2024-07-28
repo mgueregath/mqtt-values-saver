@@ -5,33 +5,38 @@ import (
 	mqtt_transport "ValuesImporter/external/mqtt-transport"
 	"ValuesImporter/persistence/mariadb/repository"
 	save_value "ValuesImporter/usecase/save-value"
+	"github.com/shettyh/threadpool"
 	"github.com/tidwall/gjson"
 	"strconv"
 )
 
-type EntityParameterValuesImporter struct {
+type ProcessorTask struct {
+	topic     string
+	message   []byte
+	instances []entity.EntityParameterInstance
+	importer  *EntityParameterValuesThreadedImporter
+}
+
+type EntityParameterValuesThreadedImporter struct {
 	dataSourceRepository              repository.DataSourceRepository
 	entityParameterInstanceRepository repository.EntityParameterInstanceRepository
 	saveValue                         save_value.SaveValue
 	mqttInstances                     []mqtt_transport.PahoMqtt
 }
 
-func NewEntityParameterValuesImporter(
+func NewEntityParameterValuesThreadedImporter(
 	dataSourceRepository repository.DataSourceRepository,
 	entityParameterInstanceRepository repository.EntityParameterInstanceRepository,
-	saveValue save_value.SaveValue) *EntityParameterValuesImporter {
-	return &EntityParameterValuesImporter{dataSourceRepository: dataSourceRepository, entityParameterInstanceRepository: entityParameterInstanceRepository, saveValue: saveValue}
+	saveValue save_value.SaveValue) *EntityParameterValuesThreadedImporter {
+	return &EntityParameterValuesThreadedImporter{dataSourceRepository: dataSourceRepository, entityParameterInstanceRepository: entityParameterInstanceRepository, saveValue: saveValue}
 }
 
-type configurations struct {
-	dataSource entity.DataSource
-	topics     []entity.EntityParameterInstance
-}
-
-func (importer *EntityParameterValuesImporter) Start() {
+func (importer *EntityParameterValuesThreadedImporter) Start() {
 	var dataSources []entity.DataSource = importer.dataSourceRepository.GetDataSources()
 
 	config := make(map[int]configurations, 0)
+
+	pool := threadpool.NewThreadPool(200, 1000000)
 
 	var entityParameterInstances []entity.EntityParameterInstance = importer.entityParameterInstanceRepository.GetEntityParameterInstances()
 
@@ -66,18 +71,23 @@ func (importer *EntityParameterValuesImporter) Start() {
 			topicsMap[*topic.LiveTopic] = append(topicsMap[*topic.LiveTopic], topic)
 		}
 		mqtt.Connect(topics, func(topic string, message []byte) {
-			for _, instance := range topicsMap[topic] {
-				if instance.LiveVariable != nil && *instance.LiveVariable != "" {
-					var timestamp string = ""
-					if instance.LiveTimestampVariable != nil && *instance.LiveTimestampVariable != "" {
-						timestamp = gjson.Get(string(message), *instance.LiveTimestampVariable).String()
-					}
-					importer.saveValue.Save(instance, gjson.Get(string(message), *instance.LiveVariable).String(), timestamp)
-				}
-			}
+			task := &ProcessorTask{topic: topic, message: message, instances: topicsMap[topic], importer: importer}
+			pool.Execute(task)
 		})
 
 		importer.mqttInstances = append(importer.mqttInstances, *mqtt)
 	}
 
+}
+
+func (t *ProcessorTask) Run() {
+	for _, instance := range t.instances {
+		if instance.LiveVariable != nil && *instance.LiveVariable != "" {
+			var timestamp string = ""
+			if instance.LiveTimestampVariable != nil && *instance.LiveTimestampVariable != "" {
+				timestamp = gjson.Get(string(t.message), *instance.LiveTimestampVariable).String()
+			}
+			t.importer.saveValue.Save(instance, gjson.Get(string(t.message), *instance.LiveVariable).String(), timestamp)
+		}
+	}
 }

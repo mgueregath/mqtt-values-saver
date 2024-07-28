@@ -29,10 +29,12 @@ func startPersistence() {
 }
 
 var importerWorker *import_values.EntityParameterValuesImporter
+var importerThreadedWorker *import_values.EntityParameterValuesThreadedImporter
 
 func startWorkers() {
-	importerWorker = import_values.NewEntityParameterValuesImporter(*dataSourceRepository, *entityParameterInstanceRepository, *saveValue)
-	importerWorker.Start()
+	//importerWorker = import_values.NewEntityParameterValuesImporter(*dataSourceRepository, *entityParameterInstanceRepository, *saveValue)
+	importerThreadedWorker = import_values.NewEntityParameterValuesThreadedImporter(*dataSourceRepository, *entityParameterInstanceRepository, *saveValue)
+	importerThreadedWorker.Start()
 
 }
 

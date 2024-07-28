@@ -73,7 +73,7 @@ func (client *PahoMqtt) Connect(topics []string, fn callback) error {
 
 func (client *PahoMqtt) subscribe(topics []string, fn callback) {
 	topicsMap := make(map[string]byte, 0)
-	for i := 0; i < len(topics); i += 2 {
+	for i := 0; i < len(topics); i += 1 {
 		topicsMap[topics[i]] = 1
 	}
 	client.pahoClient.SubscribeMultiple(topicsMap, func(c mqtt.Client, message mqtt.Message) {

@@ -1,10 +1,10 @@
 production: False
 database:
   driver: mysql
-  host: 192.168.1.113
-  port: 3312
+  host: localhost
+  port: 3310
   username: root
   password: hapticus
-  database: dc_note
+  database: dc_mqtt
   max_database_connections:  10
   max_idle_connections: 10
